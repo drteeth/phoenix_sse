@@ -33,3 +33,22 @@
     </ul>
   </article>
 </section>
+
+<script>
+  window.addEventListener('DOMContentLoaded', (_event) => {
+    const source = new EventSource('/data');
+
+    // handle messages
+    source.onopen = function(event) {
+      console.log(event.type);
+    };
+
+    source.onmessage = function(event) {
+      console.log(event.type);
+    };
+
+    source.onerror = function(event) {
+      console.log("error", event.data);
+    };
+  });
+</script>

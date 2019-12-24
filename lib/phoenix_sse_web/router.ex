@@ -9,6 +9,10 @@ defmodule PhoenixSseWeb.Router do
     plug :put_secure_browser_headers
   end
 
+  pipeline :sse do
+    plug :accepts, ["sse"]
+  end
+
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -17,6 +21,12 @@ defmodule PhoenixSseWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+  end
+
+  scope "/", PhoenixSseWeb do
+    pipe_through :sse
+
+    get "/data", PageController, :data
   end
 
   # Other scopes may use custom stacks.
