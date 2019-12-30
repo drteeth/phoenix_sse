@@ -5,10 +5,9 @@ import "phoenix_html"
 window.addEventListener('DOMContentLoaded', () => {
   let source = new EventSource("/sse");
 
-  source.addEventListener('error', () => {
-    console.log("errored at " + count + "seconds");
+  source.addEventListener('error', e => {
+    console.log("error", e);
     console.log('SSE state:', source.readyState);
-    count = 0;
   });
 
   source.addEventListener('message', e => {

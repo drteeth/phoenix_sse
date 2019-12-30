@@ -8,14 +8,9 @@ defmodule PhoenixSseWeb.PageController do
   def sse(conn, params) do
     conn =
       conn
+      |> put_resp_content_type("text/event-stream")
       |> put_resp_header("cache-control", "no-cache")
-      |> put_resp_header("Connection", "keep-alive")
-      |> put_resp_header("Content-Type", "text/event-stream")
-      |> put_resp_header("Access-Control-Allow-Origin", "*")
-      |> put_resp_header(
-        "Access-Control-Allow-Headers",
-        "Origin, X-Requested-With, Content-Type, Accept"
-      )
+      # |> put_resp_header("Connection", "keep-alive") # only in http/1
       |> send_chunked(200)
 
     Process.send_after(self(), {:msg, "HELLO 1"}, 1_000)
@@ -23,16 +18,17 @@ defmodule PhoenixSseWeb.PageController do
     Process.send_after(self(), {:msg, "HELLO 3"}, 3_000)
     Process.send_after(self(), {:msg, "HELLO 4"}, 4_000)
     Process.send_after(self(), {:msg, "HELLO 5"}, 5_000)
+    Process.send_after(self(), {:msg, "HELLO 6"}, 45_000)
 
     last_event_id =
       with [id_str] <- get_req_header(conn, "last-event-id"),
            {id, ""} <- Integer.parse(id_str) do
         id
       else
-        _ -> 0
+        _ -> -1
       end
 
-    loop(conn, last_event_id)
+    loop(conn, last_event_id + 1)
   end
 
   @keep_alive ":ping\n\n"
