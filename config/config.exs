@@ -10,6 +10,19 @@ use Mix.Config
 config :phoenix_sse,
   ecto_repos: [PhoenixSse.Repo]
 
+# we need to set the timeout for *all* requests
+# so that SSE connections don't get closed due
+# to inactivity
+config :phoenix_sse, PhoenixSseWeb.Endpoint,
+  http: [
+    # 10 minutes
+    protocol_options: [idle_timeout: 600_000]
+  ],
+  https: [
+    # 10 minutes
+    protocol_options: [idle_timeout: 600_000]
+  ]
+
 # Configures the endpoint
 config :phoenix_sse, PhoenixSseWeb.Endpoint,
   url: [host: "localhost"],
