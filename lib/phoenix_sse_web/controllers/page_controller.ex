@@ -27,6 +27,7 @@ defmodule PhoenixSseWeb.PageController do
     |> json(%{ok: true})
   end
 
+  @spec get_last_event_id(Plug.Conn.t()) :: String.t() | nil
   defp get_last_event_id(conn) do
     conn
     |> get_req_header("last-event-id")
