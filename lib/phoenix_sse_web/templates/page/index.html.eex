@@ -3,4 +3,5 @@
   <strong>Message-ID:</strong> <div id="message-id">...</div><br/>
   <strong>Value:</strong> <div id="stock-value">...</div><br/>
   <strong>Last error:</stong> <div id="status"></div><br/>
+  <button id="inject-stock">Inject</button>
 </div>

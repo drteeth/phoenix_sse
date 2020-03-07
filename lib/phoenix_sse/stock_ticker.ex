@@ -18,6 +18,16 @@ defmodule PhoenixSse.StockTicker do
     GenServer.call(__MODULE__, {:resend_since, id})
   end
 
+  def inject(stock) do
+    GenServer.call(__MODULE__, {:inject, stock})
+  end
+
+  @impl GenServer
+  def handle_continue(:schedule_next_tick, state) do
+    schedule_next_tick()
+    {:noreply, state}
+  end
+
   @impl GenServer
   def handle_call({:resend_since, id}, {pid, _ref}, events) do
     IO.inspect(id, label: "resend_since")
@@ -35,19 +45,22 @@ defmodule PhoenixSse.StockTicker do
   end
 
   @impl GenServer
-  def handle_continue(:schedule_next_tick, state) do
+  def handle_call({:inject, stock}, _from, events) do
     schedule_next_tick()
-    {:noreply, state}
+    {:reply, :ok, append(events, stock)}
   end
 
   @impl GenServer
   def handle_info({:tick, value}, events) do
-    id = Enum.count(events)
-    event = publish_event(%{id: id, symbol: "ABCD", value: value})
-
     schedule_next_tick()
+    {:noreply, append(events, %{symbol: "ABCD", value: value})}
+  end
 
-    {:noreply, events ++ [event]}
+  defp append(events, stock) do
+    id = Enum.count(events)
+    stock = Map.put(stock, :id, id)
+    event = publish_event(stock)
+    events ++ [event]
   end
 
   defp schedule_next_tick() do

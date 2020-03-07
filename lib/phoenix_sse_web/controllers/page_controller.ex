@@ -33,4 +33,15 @@ defmodule PhoenixSseWeb.PageController do
     conn
     |> SSE.listen(StockTicker.topic(), last_event_id)
   end
+
+  def inject_stock(conn, params) do
+    StockTicker.inject(%{
+      symbol: params["symbol"],
+      value: params["value"],
+    });
+
+    conn
+    |> put_status(:ok)
+    |> json(%{ok: true})
+  end
 end
