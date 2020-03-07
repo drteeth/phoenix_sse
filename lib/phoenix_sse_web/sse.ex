@@ -1,8 +1,11 @@
 defmodule PhoenixSseWeb.SSE do
   @keep_alive ":ping\n\n"
 
+  @spec listen(Plug.Conn.t(), String.t(), String.t() | nil) :: Plug.Conn.t()
   def listen(conn, topic, last_event_id) do
     last_id = parse_event_id(last_event_id)
+
+    conn = conn |> put_sse_headers()
 
     # re-send any events we've missed
     PhoenixSse.StockTicker.resend_since(last_id)
@@ -14,6 +17,16 @@ defmodule PhoenixSseWeb.SSE do
     loop(topic, conn)
   end
 
+  @spec put_sse_headers(Plug.Conn.t()) :: Plug.Conn.t()
+  def put_sse_headers(conn) do
+    conn
+    |> Plug.Conn.put_resp_content_type("text/event-stream")
+    |> Plug.Conn.put_resp_header("cache-control", "no-cache")
+    # ONLY HTTP 1.1 ! |> Plug.Conn.put_resp_header("Connection", "keep-alive")
+    |> Plug.Conn.send_chunked(200)
+  end
+
+  @spec loop(String.t(), Plug.Conn.t()) :: Plug.Conn.t()
   def loop(topic, conn) do
     receive do
       %{topic: ^topic, event: "update", payload: event} ->
@@ -42,6 +55,7 @@ defmodule PhoenixSseWeb.SSE do
     end
   end
 
+  @spec parse_event_id(String.t() | nil) :: integer
   defp parse_event_id(id_str) do
     case id_str do
       nil -> -1
