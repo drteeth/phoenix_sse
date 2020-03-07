@@ -35,10 +35,7 @@ defmodule PhoenixSseWeb.PageController do
   end
 
   def inject_stock(conn, params) do
-    StockTicker.inject(%{
-      symbol: params["symbol"],
-      value: params["value"],
-    });
+    StockTicker.inject(params["symbol"])
 
     conn
     |> put_status(:ok)

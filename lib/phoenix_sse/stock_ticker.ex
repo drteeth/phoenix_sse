@@ -1,13 +1,17 @@
 defmodule PhoenixSse.StockTicker do
   use GenServer
 
+  defmodule State do
+    defstruct events: [], symbols: ["ABCD"]
+  end
+
   def start_link(_args) do
-    GenServer.start_link(__MODULE__, [], name: __MODULE__)
+    GenServer.start_link(__MODULE__, %State{}, name: __MODULE__)
   end
 
   @impl GenServer
-  def init(events) do
-    {:ok, events, {:continue, :schedule_next_tick}}
+  def init(state) do
+    {:ok, state, {:continue, :schedule_next_tick}}
   end
 
   def topic() do
@@ -18,8 +22,8 @@ defmodule PhoenixSse.StockTicker do
     GenServer.call(__MODULE__, {:resend_since, id})
   end
 
-  def inject(stock) do
-    GenServer.call(__MODULE__, {:inject, stock})
+  def inject(symbol) do
+    GenServer.call(__MODULE__, {:add_symbol, symbol})
   end
 
   @impl GenServer
@@ -29,10 +33,10 @@ defmodule PhoenixSse.StockTicker do
   end
 
   @impl GenServer
-  def handle_call({:resend_since, id}, {pid, _ref}, events) do
+  def handle_call({:resend_since, id}, {pid, _ref}, state) do
     IO.inspect(id, label: "resend_since")
 
-    events
+    state.events
     |> Enum.drop(id + 1)
     |> IO.inspect(label: "missed")
     |> Enum.each(fn event ->
@@ -41,26 +45,43 @@ defmodule PhoenixSse.StockTicker do
       end
     end)
 
-    {:reply, :ok, events}
+    {:reply, :ok, state}
   end
 
   @impl GenServer
-  def handle_call({:inject, stock}, _from, events) do
-    schedule_next_tick()
-    {:reply, :ok, append(events, stock)}
+  def handle_call({:add_symbol, symbol}, _from, state) do
+    id = state.events |> Enum.count()
+
+    event =
+      publish_event(%{
+        id: id,
+        symbol: symbol,
+        value: 0
+      })
+
+    state = %{state | symbols: [symbol | state.symbols], events: state.events ++ [event]}
+
+    {:reply, :ok, state}
   end
 
   @impl GenServer
-  def handle_info({:tick, value}, events) do
-    schedule_next_tick()
-    {:noreply, append(events, %{symbol: "ABCD", value: value})}
-  end
+  def handle_info({:tick, value}, state) do
+    id = state.events |> Enum.count()
+    symbol = state.symbols |> Enum.random()
 
-  defp append(events, stock) do
-    id = Enum.count(events)
-    stock = Map.put(stock, :id, id)
+    stock = %{
+      id: id,
+      symbol: symbol,
+      value: value
+    }
+
     event = publish_event(stock)
-    events ++ [event]
+
+    state = %{state | events: state.events ++ [event]}
+
+    schedule_next_tick()
+
+    {:noreply, state}
   end
 
   defp schedule_next_tick() do

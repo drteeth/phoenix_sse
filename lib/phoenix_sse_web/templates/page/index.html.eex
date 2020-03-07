@@ -1,7 +1,16 @@
-<div style="background-color: #efefef; padding: 1em; border-radius: 1em; border: 1px solid #ccc;">
-  <strong>Symbol:</strong> <div id="stock-symbol">...</div><br/>
-  <strong>Message-ID:</strong> <div id="message-id">...</div><br/>
-  <strong>Value:</strong> <div id="stock-value">...</div><br/>
-  <strong>Last error:</stong> <div id="status"></div><br/>
-  <button id="inject-stock">Inject</button>
+Symbol: <input type="text" id="new-stock-symbol" value="ELXR" />
+<button id="new-stock">Add</button>
+
+<p>
+  <strong>Last error:</strong>
+  <div id="status"></div>
+</p>
+
+<div id="stocks">
+</div>
+
+<div id="stock-template" class="stock">
+  <strong>Symbol:</strong> <div class="symbol">...</div>
+  <strong>Message-ID:</strong> <div class="id">...</div>
+  <strong>Value:</strong> <div class="value">...</div>
 </div>

@@ -3,11 +3,13 @@ import css from "../css/app.css"
 import "phoenix_html"
 
 window.addEventListener("DOMContentLoaded", () => {
-  const idEl = document.getElementById("message-id");
-  const valueEl = document.getElementById("stock-value");
-  const symbolEl = document.getElementById("stock-symbol");
+  const stockList = document.getElementById('stocks');
+  const newStockButton = document.getElementById("new-stock");
+  const newStockSymbol = document.getElementById("new-stock-symbol");
   const statusEl = document.getElementById("status");
-  const injectButton = document.getElementById("inject-stock");
+  const stockTemplate = document.getElementById("stock-template");
+
+  const stockElements = {};
 
   const source = new EventSource("/sse");
 
@@ -19,6 +21,13 @@ window.addEventListener("DOMContentLoaded", () => {
 
   source.addEventListener("message", e => {
     const event = JSON.parse(e.data);
+
+    const stockEl = findOrAppendStockElement(event.symbol);
+
+    const valueEl = stockEl.getElementsByClassName("value")[0];
+    const symbolEl = stockEl.getElementsByClassName("symbol")[0];
+    const idEl = stockEl.getElementsByClassName("id")[0];
+
     idEl.innerText = event.id;
     symbolEl.innerText = event.symbol;
     valueEl.innerText = event.value;
@@ -29,10 +38,28 @@ window.addEventListener("DOMContentLoaded", () => {
     source.close();
   });
 
-  injectButton.addEventListener("click", () => {
-    const stock = { symbol: "ELXR", value: 1000 };
-    post("/api/stocks", stock)
+  newStockButton.addEventListener("click", () => {
+    const symbol = newStockSymbol.value
+
+    if (symbol && symbol.length > 0) {
+      const stock = { symbol: newStockSymbol.value }
+      post("/api/stocks", stock)
+      newStockSymbol.value = "";
+    }
   });
+
+  function findOrAppendStockElement(symbol) {
+    let el = stockElements[symbol];
+
+    if (!el) {
+      el = stockTemplate.cloneNode(true);
+      el.style.display = "block";
+      stockList.appendChild(el);
+      stockElements[symbol] = el;
+    }
+
+    return el;
+  }
 
   function post(url, data) {
     var xhr = new XMLHttpRequest();

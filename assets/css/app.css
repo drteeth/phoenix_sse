@@ -1,3 +1,14 @@
 /* This file is for your main application css. */
 
 @import "./phoenix.css";
+
+
+#stock-template {
+  display: none;
+}
+.stock {
+  background-color: #efefef;
+  padding: 1em;
+  border-radius: 1em;
+  border: 1px solid #ccc;
+}
