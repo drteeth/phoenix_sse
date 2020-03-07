@@ -27,8 +27,6 @@ defmodule PhoenixSseWeb.PageController do
       |> get_req_header("last-event-id")
       |> List.first()
 
-    IO.inspect(last_event_id, label: "last_event_id")
-
     # Block here and listen for ticker updates
     conn
     |> SSE.listen(StockTicker.topic(), last_event_id)
