@@ -16,7 +16,7 @@ defmodule PhoenixSseWeb.PageController do
       conn
       |> put_resp_content_type("text/event-stream")
       |> put_resp_header("cache-control", "no-cache")
-      |> put_resp_header("Connection", "keep-alive")
+      # ONLY HTTP 1.1 ! |> put_resp_header("Connection", "keep-alive")
       |> send_chunked(200)
 
     # If this is a re-connect, it will include the ID
@@ -34,8 +34,8 @@ defmodule PhoenixSseWeb.PageController do
     |> SSE.listen(StockTicker.topic(), last_event_id)
   end
 
-  def inject_stock(conn, params) do
-    StockTicker.inject(params["symbol"])
+  def add_symbol(conn, params) do
+    StockTicker.add_symbol(params["symbol"])
 
     conn
     |> put_status(:ok)

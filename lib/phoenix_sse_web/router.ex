@@ -32,6 +32,6 @@ defmodule PhoenixSseWeb.Router do
   scope "/api", PhoenixSseWeb do
     pipe_through :api
 
-    post "/stocks", PageController, :inject_stock
+    post "/stocks", PageController, :add_symbol
   end
 end

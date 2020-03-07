@@ -22,7 +22,7 @@ defmodule PhoenixSse.StockTicker do
     GenServer.call(__MODULE__, {:resend_since, id})
   end
 
-  def inject(symbol) do
+  def add_symbol(symbol) do
     GenServer.call(__MODULE__, {:add_symbol, symbol})
   end
 
