@@ -5,9 +5,9 @@ defmodule PhoenixSse.StockTicker do
     GenServer.start_link(__MODULE__, [], name: __MODULE__)
   end
 
+  @impl GenServer
   def init(events) do
-    schedule_next_tick()
-    {:ok, events}
+    {:ok, events, {:continue, :schedule_next_tick}}
   end
 
   def topic() do
@@ -18,6 +18,7 @@ defmodule PhoenixSse.StockTicker do
     GenServer.call(__MODULE__, {:resend_since, id})
   end
 
+  @impl GenServer
   def handle_call({:resend_since, id}, {pid, _ref}, events) do
     IO.inspect(id, label: "resend_since")
 
@@ -33,6 +34,13 @@ defmodule PhoenixSse.StockTicker do
     {:reply, :ok, events}
   end
 
+  @impl GenServer
+  def handle_continue(:schedule_next_tick, state) do
+    schedule_next_tick()
+    {:noreply, state}
+  end
+
+  @impl GenServer
   def handle_info({:tick, value}, events) do
     id = Enum.count(events)
     event = publish_event(%{id: id, symbol: "ABCD", value: value})
@@ -42,13 +50,12 @@ defmodule PhoenixSse.StockTicker do
     {:noreply, events ++ [event]}
   end
 
-  def schedule_next_tick() do
+  defp schedule_next_tick() do
     time = :rand.uniform(5_000)
-    IO.inspect(time, label: "next_tick")
     Process.send_after(self(), {:tick, time / 10}, time)
   end
 
-  def publish_event(event) do
+  defp publish_event(event) do
     PhoenixSseWeb.Endpoint.broadcast(topic(), "update", event)
     event
   end
