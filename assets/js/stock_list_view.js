@@ -21,7 +21,7 @@ class StockListView {
   addSymbol() {
     const symbol = this.newStockSymbol.value
 
-    if (symbol && symbol.length > 0) {
+    if (symbol && symbol.length > 0 && !this.hasSymbol(symbol)) {
       this.api.addSymbol(symbol);
       this.newStockSymbol.value = "";
     }
@@ -49,6 +49,10 @@ class StockListView {
         v.clearHighlight();
       }
     });
+  }
+
+  hasSymbol(symbol) {
+    return Object.keys(this.views).includes(symbol);
   }
 }
 
