@@ -6,9 +6,18 @@
 #stock-template {
   display: none;
 }
+
 .stock {
+  width: 10em;
+  margin: 1em;
   background-color: #efefef;
   padding: 1em;
   border-radius: 1em;
   border: 1px solid #ccc;
+  float: left;
+}
+
+.stock.active {
+  border-color: #cdc;
+  background-color: #efffef;
 }

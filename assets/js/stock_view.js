@@ -17,6 +17,14 @@ class StockView {
     this.idEl.innerText = eventId;
     this.valueEl.innerText = value;
   }
+
+  highlight() {
+    this.element.classList.add('active');
+  }
+
+  clearHighlight() {
+    this.element.classList.remove('active');
+  }
 }
 
 export default StockView;

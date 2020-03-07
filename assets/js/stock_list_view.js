@@ -15,6 +15,7 @@ class StockListView {
   onStockEvent(event) {
     const stockView = this.findStockView(event.symbol);
     stockView.render(event.id, event.value);
+    this.highlightActiveView(stockView);
   }
 
   addSymbol() {
@@ -38,6 +39,16 @@ class StockListView {
     this.views[symbol] = stockView;
     this.element.appendChild(element);
     return stockView;
+  }
+
+  highlightActiveView(stockView) {
+    Object.values(this.views).forEach(v => {
+      if(v === stockView) {
+        v.highlight();
+      } else {
+        v.clearHighlight();
+      }
+    });
   }
 }
 
