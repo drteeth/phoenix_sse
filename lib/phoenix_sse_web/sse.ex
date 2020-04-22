@@ -1,5 +1,8 @@
 defmodule PhoenixSseWeb.SSE do
   @keep_alive ":ping\n\n"
+  @keep_alive_timeout 30_000
+
+  alias PhoenixSse.SSEEncoder
 
   @spec listen(Plug.Conn.t(), String.t(), String.t() | nil) :: Plug.Conn.t()
   def listen(conn, topic, last_event_id) do
@@ -14,11 +17,11 @@ defmodule PhoenixSseWeb.SSE do
     PhoenixSseWeb.Endpoint.subscribe(topic)
 
     # Start the receive loop
-    loop(topic, conn)
+    loop(conn)
   end
 
   @spec put_sse_headers(Plug.Conn.t()) :: Plug.Conn.t()
-  def put_sse_headers(conn) do
+  defp put_sse_headers(conn) do
     conn
     |> Plug.Conn.put_resp_content_type("text/event-stream")
     |> Plug.Conn.put_resp_header("cache-control", "no-cache")
@@ -26,33 +29,52 @@ defmodule PhoenixSseWeb.SSE do
     |> Plug.Conn.send_chunked(200)
   end
 
-  @spec loop(String.t(), Plug.Conn.t()) :: Plug.Conn.t()
-  def loop(topic, conn) do
+  @spec loop(Plug.Conn.t()) :: Plug.Conn.t()
+  defp loop(conn) do
     receive do
-      %{topic: ^topic, event: "update", payload: event} ->
-        # We've got a message, send it to the client
-        case(Plug.Conn.chunk(conn, "id: #{event.id}\ndata: #{Jason.encode!(event)}\n\n")) do
-          {:ok, conn} ->
-            IO.inspect(event, label: "sent SSE message")
-            loop(topic, conn)
-
-          {:error, :close} ->
-            IO.inspect("connection closed.")
-            conn
-        end
+      %{payload: %{id: id} = event} ->
+        send_sse_chunk(conn, id, event)
     after
-      30_000 ->
-        # We haven't sent anything to the client lately, ping them to keep the connection alive
-        case(Plug.Conn.chunk(conn, @keep_alive)) do
-          {:ok, conn} ->
-            IO.puts("keep-alive")
-            loop(topic, conn)
-
-          {:error, :closed} ->
-            IO.inspect("closed keeping alive")
-            conn
-        end
+      @keep_alive_timeout ->
+        send_keep_alive(conn)
     end
+  end
+
+  @spec send_sse_chunk(Plug.Conn.t(), term, term) :: Plug.Conn.t()
+  defp send_sse_chunk(conn, id, event) do
+    data = Jason.encode!(event)
+    chunk_data = SSEEncoder.encode(id: id, data: data)
+
+    case(Plug.Conn.chunk(conn, chunk_data)) do
+      {:ok, conn} ->
+        IO.inspect(chunk_data, label: "sent SSE message")
+        loop(conn)
+
+      {:error, :close} ->
+        IO.inspect("connection closed.")
+        conn
+    end
+  end
+
+  @spec send_keep_alive(Plug.Conn.t()) :: Plug.Conn.t()
+  defp send_keep_alive(conn) do
+    # We haven't sent anything to the client lately, ping them to keep the connection alive
+    case(Plug.Conn.chunk(conn, @keep_alive)) do
+      {:ok, conn} ->
+        IO.puts("keep-alive")
+        loop(conn)
+
+      {:error, :closed} ->
+        IO.inspect("Can't send keep-alive")
+        conn
+    end
+  end
+
+  @spec sse_encode(%{id: String.t()}) :: Plug.Conn.t()
+  defp sse_encode(event) do
+    id = "id: #{event.id}"
+    data = "data: #{Jason.encode!(event)}"
+    Enum.join("")
   end
 
   @spec parse_event_id(String.t() | nil) :: integer
